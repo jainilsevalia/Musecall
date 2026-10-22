@@ -1,0 +1,29 @@
+# Fly.io template. Set `app` and `primary_region`, then:
+#   fly volumes create bridge_data --size 1
+#   fly secrets set BRIDGE_API_KEY_SHA256=... STREAM_TOKEN_SECRET=... TWILIO_ACCOUNT_SID=... ...
+app = "CHANGE-ME"
+primary_region = "yul"
+
+[build]
+
+[env]
+  PORT = "8080"
+  DATABASE_PATH = "/data/bridge.db"
+
+[mounts]
+  source = "bridge_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # Keep one machine up: Twilio webhooks and live calls cannot wait for a cold start,
+  # and SQLite state lives on this machine's volume.
+  auto_stop_machines = "off"
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/healthz"
+    interval = "30s"
+    timeout = "5s"
